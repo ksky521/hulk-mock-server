@@ -5,7 +5,6 @@ const {exec, execSync} = require('child_process');
 const path = require('path');
 const {
     resolve,
-    extname,
     join
 } = path;
 
@@ -13,9 +12,9 @@ const Mock = require('mockjs');
 const which = require('which');
 const userHome = require('user-home');
 const {
-    existsSync,
     readJsonSync,
     pathExistsSync,
+    existsSync,
     stat
 } = require('fs-extra');
 
@@ -33,8 +32,7 @@ function serveSmarty(options) {
     // 获取 php 路径
     let {
         bin,
-        dataDir = resolve(baseDir, './mock/_data_'),
-        ext = '.tpl'
+        dataDir = resolve(baseDir, './mock/_data_')
     } = options;
 
     // 处理成标准目录
@@ -63,57 +61,49 @@ function serveSmarty(options) {
     }
 
     const useMockData = pathExistsSync(dataDir);
+    debug(useMockData, dataDir);
 
     return (req, res, next, filename) => {
-        debug(filename, ext);
+        debug(filename);
 
         return new Promise((pResolve, reject) => {
-            if (filename.startsWith('.') || filename.endsWith('/')) {
-                return reject();
-            }
+            const orgiFilePath = resolve(baseDir, filename);
 
-            if (ext && extname(filename) !== ext) {
-                filename += ext;
-            }
-
-            // 提前将确定量加入 cmd
-            const cmd = [bin, PHP_FILE_PATH];
-
-            // 将 smarty cache 放到 userhome 下面
-            cmd.push(`--cache=${getQuoteString(join(userHome, `.${name}`))}`);
-            cmd.push(`--dir=${getQuoteString(baseDir)}`);
-            cmd.push(`--name=${getQuoteString(filename)}`);
-
-            stat(join(baseDir, filename)).then(stat => {
+            // 先判断是不是目录
+            stat(orgiFilePath).then((stat) => {
                 if (stat.isDirectory()) {
                     return reject();
                 }
 
-                const tplName = filename.replace(new RegExp(`${ext}$`), '');
-                debug(tplName);
+                // 提前将确定量加入 cmd
+                const cmd = [bin, PHP_FILE_PATH];
 
-                const dataArgs = [];
-                const dataFilePath = resolve(dataDir, `./${tplName}.json`);
-                console.log(dataFilePath, useMockData);
+                // 将 smarty cache 放到 userhome 下面
+                cmd.push(`--cache=${getQuoteString(join(userHome, `.${name}`))}`);
+                cmd.push(`--dir=${getQuoteString(baseDir)}`);
+                cmd.push(`--name=${getQuoteString(filename)}`);
 
-                if (useMockData && existsSync(dataFilePath)) {
-                    let data = Mock.mock(readJsonSync(dataFilePath));
-                    mockDataFilePath = dataFilePath;
-                    dataArgs.push(`--data=${getQuoteString(JSON.stringify(data))}`);
+                const infoCmd = [...cmd];
+                if (useMockData) {
+                    let t = findData(filename, dataDir);
+                    if (t && t.file) {
+                        dataFilePath = t.file;
+                        cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
+                        infoCmd.push(`--data=${t.file}`);
+                    }
                 }
 
-                const code = cmd.concat(dataArgs).join(' ');
+                const code = cmd.join(' ');
 
                 debug(code);
 
                 exec(code, (err, stdout, stderr) => {
-                    debug(stdout);
                     if (err) {
                         debug(err, stderr);
                         stderr ? res.end(stderr) : stdout ? res.end(stdout) : res.end(err.toString());
                     }
                     else {
-                        const info = ['<!--created by smarty', ...cmd, `--data=${dataFilePath}`, '--->'].join('\n');
+                        const info = ['<!--created by smarty', ...infoCmd, '--->'].join('\n');
                         const body = stdout + `${info}`;
                         res.setHeader('Content-Type', 'text/html; charset=utf-8');
                         res.setHeader('Content-Length', body.length);
@@ -129,5 +119,31 @@ function serveSmarty(options) {
 
 function getQuoteString(str) {
     return JSON.stringify(str);
+}
+
+function findData(filename, rootDir) {
+    const rs = {};
+    // 查找data 地址，index.tpl → index.tpl.json → index.json
+    //
+    const arr = [resolve(rootDir, `./${filename}.json`)];
+    if (~filename.lastIndexOf('.')) {
+        const name = filename.slice(0, filename.lastIndexOf('.'));
+        arr.push(resolve(rootDir, `./${name}.json`));
+    }
+
+    const result = arr.find((file) => {
+        debug(file);
+
+        try {
+            let data = Mock.mock(readJsonSync(file));
+            rs.file = file;
+            rs.data = data;
+            return true;
+        }
+        catch (e) {}
+        return false;
+    });
+
+    return result ? rs : false;
 }
 module.exports = serveSmarty;

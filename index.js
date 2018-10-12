@@ -31,13 +31,15 @@ const {debug, loadModule} = require('./lib/utils');
  *
  */
 function middleware(options = {}) {
+    debug(options);
+
     const contentBase = resolve(options.contentBase || '');
     const rootDir = options.rootDir ? resolve(options.rootDir || '') : join(contentBase, './mock');
 
     const processorOptions = options.processors || [];
     // 增加 mockdata 处理mockDir/_mockdata_ 的mock数据
     // 访问/_mockdata_ 的 json 则直接使用 mockjs 后显示
-    processorOptions.push(`jsondata?router=/_data_/**&baseDir=${rootDir}`);
+    processorOptions.push(`jsondata?router=/_data_/*&baseDir=${rootDir}&dataDir=_data_`);
 
     // 1. 标准化
     // 2. 创建 server
@@ -81,7 +83,7 @@ function run(processors = [], req, res, next) {
         const result = processors.find(({router, server}) => {
             const match = pathToRegexp(router).exec(req.path);
             if (match && match[1]) {
-                debug('找到 router ', router, match);
+                debug('Find router ', router, match);
                 server(req, res, next, match[1]).catch(next);
                 return true;
             }
