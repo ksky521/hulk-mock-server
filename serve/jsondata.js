@@ -19,21 +19,17 @@ module.exports = (options = {}) => {
     return (req, res, next, pathname) => {
         debug(pathname);
 
-        return new Promise((pResolve, reject) => {
-            const orgiFilePath = resolve(dataDir, pathname);
-            debug(orgiFilePath);
-            stat(orgiFilePath).then((stat) => {
-                if (stat.isDirectory()) {
-                    index(req, res, next);
-                    return pResolve();
-                }
+        const orgiFilePath = resolve(dataDir, pathname);
+        debug(orgiFilePath);
+        stat(orgiFilePath).then((stat) => {
+            if (stat.isDirectory()) {
+                return index(req, res, next);
+            }
 
-                readJson(orgiFilePath).then((json) => {
-                    res.json(mockjs.mock(json));
-                    pResolve();
-                }).catch(reject);
-            }).catch(reject);
+            readJson(orgiFilePath).then((json) => {
+                res.json(mockjs.mock(json));
+            }).catch(next);
+        }).catch(next);
 
-        });
     };
 };

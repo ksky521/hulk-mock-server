@@ -10,7 +10,7 @@ const chokidar = require('chokidar');
 const pathToRegexp = require('path-to-regexp');
 const {debug} = require('../lib/utils');
 
-const emptyServer = () => Promise.reject();
+const emptyServer = (r, s, n) => n();
 
 function pathMatch(options = {}) {
     return (path) => {
@@ -100,87 +100,83 @@ module.exports = (options) => {
     // 监听文件修改重新加载代码
     // 配置热更新
     return (req, res, next) => {
-        return new Promise((resolve, reject) => {
-            const proxyURL = `${req.method} ${req.path}`;
-            const proxyNames = Object.keys(proxyConf);
-            const proxyFuzzyMatch = proxyNames.filter((kname) => {
-                const reg = new RegExp('^' + kname.replace(/(:\w*)[^/]/ig, '(\\w*)[^/]').replace(/\/\*$/, ''));
-                if (kname.startsWith('ALL') || kname.startsWith('/')) {
-                    return /\*$/.test(kname) && reg.test(req.path);
-                }
-
-                return /\*$/.test(kname) && reg.test(proxyURL);
-            });
-            const proxyMatch = proxyNames.filter((kname) => {
-                return kname === proxyURL;
-            });
-            // 判断下面这种情况的路由
-            // => GET /api/user/:org/:name
-            // => GET /api/:owner/:repo/raw/:ref/*
-            const containMockURL = Object.keys(proxy).filter((kname) => {
-                const replaceStr = /\*$/.test(kname) ? '' : '$';
-                return (new RegExp('^' + kname.replace(/(:\w*)[^/]/ig, '(\\w*)[^/]') + replaceStr)).test(proxyURL);
-            });
-            if (proxy[proxyURL] || (containMockURL && containMockURL.length > 0)) {
-                debug('proxy', containMockURL);
-
-                let bodyParserMethd = bodyParser.json();
-                const contentType = req.get('Content-Type');
-                switch (contentType) {
-                    case 'text/plain':
-                    case 'text/html':
-                        bodyParserMethd = bodyParser.text({
-                            type: contentType
-                        });
-                        break;
-                    case 'application/x-www-form-urlencoded':
-                        bodyParserMethd = bodyParser.urlencoded({
-                            extended: false
-                        });
-                        break;
-                }
-
-                bodyParserMethd(req, res, () => {
-                    const result = proxy[proxyURL] || proxy[containMockURL[0]];
-                    if (typeof result === 'function') {
-                        // params 参数获取
-                        if (containMockURL[0]) {
-                            const mockURL = containMockURL[0].split(' ');
-                            if (mockURL && mockURL.length === 2 && req.method === mockURL[0]) {
-                                const route = pathMatch({
-                                    sensitive: false,
-                                    strict: false,
-                                    end: false
-                                });
-                                const match = route(mockURL[1]);
-                                req.params = match(parse(req.url).pathname);
-                            }
-                        }
-
-                        result(req, res, next);
-                    }
-                    else {
-                        res.json(result);
-                    }
-                    resolve();
-                });
+        const proxyURL = `${req.method} ${req.path}`;
+        const proxyNames = Object.keys(proxyConf);
+        const proxyFuzzyMatch = proxyNames.filter((kname) => {
+            const reg = new RegExp('^' + kname.replace(/(:\w*)[^/]/ig, '(\\w*)[^/]').replace(/\/\*$/, ''));
+            if (kname.startsWith('ALL') || kname.startsWith('/')) {
+                return /\*$/.test(kname) && reg.test(req.path);
             }
-            else if (proxyNames.length > 0 && (proxyMatch.length > 0 || proxyFuzzyMatch.length > 0)) {
-                const currentProxy = proxyConf[proxyMatch.length > 0 ? proxyMatch[0] : proxyFuzzyMatch[0]];
-                const url = parse(currentProxy);
-                debug('proxy', url);
-                if (changeHost) {
-                    req.headers.host = url.host;
-                }
 
-                proxyHttp.web(req, res, {
-                    target: url.href
-                });
-                resolve();
-            }
-            else {
-                reject();
-            }
+            return /\*$/.test(kname) && reg.test(proxyURL);
         });
+        const proxyMatch = proxyNames.filter((kname) => {
+            return kname === proxyURL;
+        });
+        // 判断下面这种情况的路由
+        // => GET /api/user/:org/:name
+        // => GET /api/:owner/:repo/raw/:ref/*
+        const containMockURL = Object.keys(proxy).filter((kname) => {
+            const replaceStr = /\*$/.test(kname) ? '' : '$';
+            return (new RegExp('^' + kname.replace(/(:\w*)[^/]/ig, '(\\w*)[^/]') + replaceStr)).test(proxyURL);
+        });
+        if (proxy[proxyURL] || (containMockURL && containMockURL.length > 0)) {
+            debug('proxy', containMockURL);
+
+            let bodyParserMethd = bodyParser.json();
+            const contentType = req.get('Content-Type');
+            switch (contentType) {
+                case 'text/plain':
+                case 'text/html':
+                    bodyParserMethd = bodyParser.text({
+                        type: contentType
+                    });
+                    break;
+                case 'application/x-www-form-urlencoded':
+                    bodyParserMethd = bodyParser.urlencoded({
+                        extended: false
+                    });
+                    break;
+            }
+
+            bodyParserMethd(req, res, () => {
+                const result = proxy[proxyURL] || proxy[containMockURL[0]];
+                if (typeof result === 'function') {
+                    // params 参数获取
+                    if (containMockURL[0]) {
+                        const mockURL = containMockURL[0].split(' ');
+                        if (mockURL && mockURL.length === 2 && req.method === mockURL[0]) {
+                            const route = pathMatch({
+                                sensitive: false,
+                                strict: false,
+                                end: false
+                            });
+                            const match = route(mockURL[1]);
+                            req.params = match(parse(req.url).pathname);
+                        }
+                    }
+
+                    result(req, res, next);
+                }
+                else {
+                    res.json(result);
+                }
+            });
+        }
+        else if (proxyNames.length > 0 && (proxyMatch.length > 0 || proxyFuzzyMatch.length > 0)) {
+            const currentProxy = proxyConf[proxyMatch.length > 0 ? proxyMatch[0] : proxyFuzzyMatch[0]];
+            const url = parse(currentProxy);
+            debug('proxy', url);
+            if (changeHost) {
+                req.headers.host = url.host;
+            }
+
+            proxyHttp.web(req, res, {
+                target: url.href
+            });
+        }
+        else {
+            next();
+        }
     };
 };

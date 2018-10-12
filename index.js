@@ -84,7 +84,7 @@ function run(processors = [], req, res, next) {
             const match = pathToRegexp(router).exec(req.path);
             if (match && match[1]) {
                 debug('Find router ', router, match);
-                server(req, res, next, match[1]).catch(next);
+                server(req, res, next, match[1]);
                 return true;
             }
             return false;

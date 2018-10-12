@@ -66,54 +66,50 @@ function serveSmarty(options) {
     return (req, res, next, filename) => {
         debug(filename);
 
-        return new Promise((pResolve, reject) => {
-            const orgiFilePath = resolve(baseDir, filename);
+        const orgiFilePath = resolve(baseDir, filename);
 
-            // 先判断是不是目录
-            stat(orgiFilePath).then((stat) => {
-                if (stat.isDirectory()) {
-                    return reject();
+        // 先判断是不是目录
+        stat(orgiFilePath).then((stat) => {
+            if (stat.isDirectory()) {
+                return next();
+            }
+
+            // 提前将确定量加入 cmd
+            const cmd = [bin, PHP_FILE_PATH];
+
+            // 将 smarty cache 放到 userhome 下面
+            cmd.push(`--cache=${getQuoteString(join(userHome, `.${name}`))}`);
+            cmd.push(`--dir=${getQuoteString(baseDir)}`);
+            cmd.push(`--name=${getQuoteString(filename)}`);
+
+            const infoCmd = [...cmd];
+            if (useMockData) {
+                let t = findData(filename, dataDir);
+                if (t && t.file) {
+                    dataFilePath = t.file;
+                    cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
+                    infoCmd.push(`--data=${t.file}`);
                 }
+            }
 
-                // 提前将确定量加入 cmd
-                const cmd = [bin, PHP_FILE_PATH];
+            const code = cmd.join(' ');
+            debug(code);
 
-                // 将 smarty cache 放到 userhome 下面
-                cmd.push(`--cache=${getQuoteString(join(userHome, `.${name}`))}`);
-                cmd.push(`--dir=${getQuoteString(baseDir)}`);
-                cmd.push(`--name=${getQuoteString(filename)}`);
-
-                const infoCmd = [...cmd];
-                if (useMockData) {
-                    let t = findData(filename, dataDir);
-                    if (t && t.file) {
-                        dataFilePath = t.file;
-                        cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
-                        infoCmd.push(`--data=${t.file}`);
-                    }
+            exec(code, (err, stdout, stderr) => {
+                if (err) {
+                    debug(err, stderr);
+                    stderr ? res.end(stderr) : stdout ? res.end(stdout) : res.end(err.toString());
                 }
+                else {
+                    const info = ['<!--created by smarty', ...infoCmd, '--->'].join('\n');
+                    const body = stdout + `${info}`;
+                    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                    res.setHeader('Content-Length', body.length);
+                    res.end(body);
+                }
+            });
+        }).catch(next);
 
-                const code = cmd.join(' ');
-
-                debug(code);
-
-                exec(code, (err, stdout, stderr) => {
-                    if (err) {
-                        debug(err, stderr);
-                        stderr ? res.end(stderr) : stdout ? res.end(stdout) : res.end(err.toString());
-                    }
-                    else {
-                        const info = ['<!--created by smarty', ...infoCmd, '--->'].join('\n');
-                        const body = stdout + `${info}`;
-                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                        res.setHeader('Content-Length', body.length);
-                        res.end(body);
-                    }
-                    pResolve();
-                });
-            }).catch(reject);
-
-        });
     };
 }
 
