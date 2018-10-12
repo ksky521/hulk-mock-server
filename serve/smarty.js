@@ -104,11 +104,13 @@ function serveSmarty(options) {
                     const info = ['<!--created by smarty', ...infoCmd, '--->'].join('\n');
                     const body = stdout + `${info}`;
                     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                    res.setHeader('Content-Length', body.length);
+                    // res.setHeader('Content-Length', body.length);
                     res.end(body);
                 }
             });
-        }).catch(next);
+        }).catch(() => {
+            next();
+        });
 
     };
 }

@@ -1,4 +1,9 @@
 
+/**
+ * @file mock json变成可以访问的地址
+ * 为了防止 url 冲突，约定`/_data_`目录作为数据真实存放路径
+ * rootDIr/mock/_data_
+ */
 const {
     resolve
 } = require('path');
