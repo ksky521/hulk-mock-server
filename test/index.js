@@ -11,16 +11,22 @@ const app = express();
 const {name} = require('../package.json');
 const debug = require('debug')(`${name}:test`);
 
-const port = 3000;
 const mockServer = require('../');
 
 const configSmarty = mockServer({
     contentBase: path.join(__dirname, './'),
     rootDir: path.join(__dirname, './mock'),
-    processors: [`smarty?router=/template/*&baseDir=${path.join(__dirname, './template')}&dataDir=${path.join(__dirname, './mock/_data_')}`]
+    processors: [
+        `smarty?router=/template/*&baseDir=${path.join(__dirname, './template')}&dataDir=${path.join(__dirname, './mock/_data_')}`
+    ]
 });
 
 app.use(configSmarty);
+
+app.get('/*', (req, res) => {
+    // 为了测试 next 可以透传到最底层 router
+    res.end('hello');
+});
 
 const request = supertest(app);
 
@@ -43,24 +49,53 @@ describe('test jsondata.js', () => {
     it('serve index', done => {
         request
             .get('/_data_/demo/')
+            .expect(200, /title="(index|mock)\.json"/, done);
+    });
+});
+describe('test mock.js', () => {
+    it('api user', done => {
+        request.get('/api/user')
             .expect(200)
             .expect(res => {
-                res.should.be.html();
-                // debug(res.text)
-                res.text.should.match(/title="mock\.json"/);
-                res.text.should.match(/title="index\.json"/);
+                res.should.be.json();
+                res.body.username.should.be.equal('theo');
+                res.body.sex.should.be.equal(6);
+            })
+            .end(done);
+    });
+    const app2018 = express();
+
+    app2018.get('/:owner/:repo/raw/:ref/*', (req, res, next) => {
+        // const {owner, repo} = req.params;
+        res.json(req.params);
+    });
+    app2018.listen(2018);
+    it('proxy 2018 port', done => {
+        request
+            .get('/owner/repo/raw/ref/test')
+            .expect(200)
+            .expect(res => {
+                res.should.be.json();
+                res.body.owner.should.be.equal('owner');
+            })
+            .end(done);
+    });
+    it('proxy github repo/*', done => {
+        request
+            .get('/repos/ksky521/mpspider')
+            .expect(200)
+            .expect(res => {
+                res.should.be.json();
+                res.body.html_url.should.be.equal('https://github.com/ksky521/mpspider');
             })
             .end(done);
     });
 });
-// describe('test mock.js', () => {
-
-// });
 describe('test smarty.js', () => {
     it('template not exist', done => {
         request
             .get('/template/demo/index.html')
-            .expect(404, done);
+            .expect(200, 'hello', done);
     });
     it('template parse', done => {
         request
@@ -87,17 +122,11 @@ describe('test smarty.js', () => {
     it('dir index', done => {
         request
             .get('/template/')
-            .expect(404, done);
+            .expect(200, 'hello', done);
     });
 });
-// describe('test processor addon', () => {
-// });
-// it('mock api')
-// it('mock proxy')
-// it('jsondata dir')
-// it('jsondata dir without slash')
-// it('smarty dir')
-// it('smarty dir without slash')
-// it('smarty tpl')
+describe('test processor addon', () => {
+    it('art processor', done => {
 
-// it('art processor')
+    });
+});

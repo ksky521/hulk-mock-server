@@ -19,7 +19,7 @@ const proxy = {
     // =====================
     'GET /api/user': {
         id: 1,
-        username: 'kenny',
+        username: 'theo',
         sex: 6
     }
 };
