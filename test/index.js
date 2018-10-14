@@ -27,7 +27,7 @@ const configSmarty = mockServer({
                 return (req, res, next, filename) => {
 
                     try {
-                        console.log(path.join(rootDir, filename));
+                        debug(path.join(rootDir, filename));
                         const html = art(path.join(rootDir, filename), {
                             name: 'aui'
                         });
@@ -61,7 +61,7 @@ describe('test jsondata.js', () => {
             .get('/_data_/demo/index.json')
             .expect(200, require('./mock/_data_/demo/index.json'), done);
     });
-    it('mock.json', done => {
+    it('get mock.json', done => {
         request
             .get('/_data_/demo/mock.json')
             .expect(200)
@@ -77,7 +77,7 @@ describe('test jsondata.js', () => {
             .expect(200, /title="(index|mock)\.json"/, done);
     });
 });
-describe('test mock.js', () => {
+describe('test mockapi.js', () => {
     it('api user', done => {
         request.get('/api/user')
             .expect(200)
@@ -105,7 +105,7 @@ describe('test mock.js', () => {
             })
             .end(done);
     });
-    it('proxy github repo/*', done => {
+    it('proxy github repo api', done => {
         request
             .get('/repos/ksky521/mpspider')
             .expect(200)
@@ -117,7 +117,7 @@ describe('test mock.js', () => {
     });
 });
 describe('test smarty.js', () => {
-    it('template not exist', done => {
+    it('file not found', done => {
         request
             .get('/template/demo/index.html')
             .expect(200, 'hello', done);
@@ -150,8 +150,8 @@ describe('test smarty.js', () => {
             .expect(200, 'hello', done);
     });
 });
-describe('test processor addon', () => {
-    it('art processor', done => {
+describe('art-template processor addon', () => {
+    it('template with include', done => {
         request
             .get('/_art_/index/index.html')
             .expect(200)
