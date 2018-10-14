@@ -6,6 +6,8 @@ const path = require('path');
 const supertest = require('supertest');
 const should = require('should');
 const shouldHttp = require('should-http');
+const art = require('art-template');
+
 const express = require('express');
 const app = express();
 const {name} = require('../package.json');
@@ -17,14 +19,37 @@ const configSmarty = mockServer({
     contentBase: path.join(__dirname, './'),
     rootDir: path.join(__dirname, './mock'),
     processors: [
-        `smarty?router=/template/*&baseDir=${path.join(__dirname, './template')}&dataDir=${path.join(__dirname, './mock/_data_')}`
+        `smarty?router=/template/*&baseDir=${path.join(__dirname, './template')}&dataDir=${path.join(__dirname, './mock/_data_')}`,
+        {
+            router: '/_art_/*',
+            processor: (options) => {
+                const rootDir = path.resolve(options.baseDir || '');
+                return (req, res, next, filename) => {
+
+                    try {
+                        console.log(path.join(rootDir, filename));
+                        const html = art(path.join(rootDir, filename), {
+                            name: 'aui'
+                        });
+                        res.end(html);
+                    }
+                    catch (e) {
+                        next(e);
+                    }
+                };
+
+            },
+            options: {
+                baseDir: path.join(__dirname, './art/')
+            }
+        }
     ]
 });
-
+// bootstrap
 app.use(configSmarty);
 
+// 为了测试 next 可以透传到最底层 router
 app.get('/*', (req, res) => {
-    // 为了测试 next 可以透传到最底层 router
     res.end('hello');
 });
 
@@ -127,6 +152,14 @@ describe('test smarty.js', () => {
 });
 describe('test processor addon', () => {
     it('art processor', done => {
-
+        request
+            .get('/_art_/index/index.html')
+            .expect(200)
+            .expect(res => {
+                debug(res.text);
+                res.text.should.be.match(/aui/);
+                res.text.should.be.match(/糖饼/);
+            })
+            .end(done);
     });
 });

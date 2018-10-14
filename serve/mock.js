@@ -1,5 +1,5 @@
 /**
- * @file 参考：https://github.com/jaywcjlove/webpack-api-mocker/blob，修改成中间件版本
+ * @file 参考：https://github.com/jaywcjlove/webpack-api-mocker/，修改成中间件版本
  *
  */
 const path = require('path');
@@ -58,7 +58,13 @@ function cleanCache(modulePath) {
     require.cache[modulePath] = null;
 }
 
-module.exports = (options) => {
+/**
+ * api-mocker 中间件
+ * 参考：https://github.com/jaywcjlove/webpack-api-mocker/
+ * @param {Object} options - 配置项
+ * @param {String} options.watchFile - 需要监控的mock配置文件
+ */
+module.exports = (options = {}) => {
     const proxyHttp = httpProxy.createProxyServer({});
     const watchFile = options.watchFile;
 

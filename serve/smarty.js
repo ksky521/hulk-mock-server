@@ -14,7 +14,6 @@ const userHome = require('user-home');
 const {
     readJsonSync,
     pathExistsSync,
-    existsSync,
     stat
 } = require('fs-extra');
 
@@ -22,11 +21,22 @@ const {name} = require('../package.json');
 const {debug} = require('../lib/utils');
 
 const PHP_FILE_PATH = resolve(__dirname, '../smarty/mocker.php');
-
 /**
- * smarty server
+ * @callback middlewareHandler
+ * @param {Object} req - express request object
+ * @param {Object} res - express response object
+ * @param {Function} next - express next function
+ * @param {String} filename - router 匹配之后的path
  */
-function serveSmarty(options) {
+/**
+ * smarty 中间件
+ * @param {Object} options - 配置对象
+ * @param {String} options.baseDir - router 的目录
+ * @param {String} options.bin - php bin 的路径
+ * @param {String} options.dataDir - 模板 mock 数据目录
+ * @returns middlewareHandler
+ */
+function serveSmarty(options = {}) {
     const baseDir = resolve(options.baseDir || '');
 
     // 获取 php 路径

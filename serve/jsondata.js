@@ -16,7 +16,13 @@ const {
 } = require('fs-extra');
 
 const {debug} = require('../lib/utils');
-
+/**
+ * mock data server
+ * localhost/_data_
+ * @param {Object} options 参数配置
+ * @param {String} options.baseDir - router的目录
+ * @param {String} options.dataDir - data 的目录
+ */
 module.exports = (options = {}) => {
     const baseDir = resolve(options.baseDir || '');
     const dataDir = resolve(baseDir, options.dataDir || '');

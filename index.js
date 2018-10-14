@@ -14,9 +14,15 @@ const {debug, loadModule} = require('./lib/utils');
 
 /**
  * 插件化实现 middleware
- * @param {*} options
- *  contentBase: 网站目录，跟 devServer 的 contentBase 一个
- *  rootDir: 数据来源和 mocker 配置，默认是 工作目录/mock，配置读取rootDir/index.js
+ * @param {Object} options 配置
+ * @param {String} options.contentBase 网站目录，跟 devServer 的 contentBase 一个
+ * @param {String} options.rootDir 数据来源和 mocker 配置，默认是 工作目录/mock，配置读取rootDir/index.js
+ * @param {Array} options.processors 处理器
+ * @param {string} options.processors[] - 配置语法，字符串形式
+ * @param {string} options.processors[].router - router语法，字符串形式，例如: /_data/*
+ * @param {function} options.processors[].processor - 处理器函数，返回一个中间件函数
+ * @param {object} options.processors[].options - 处理器函数配置
+ *
  * 配置其他解析器：
  * processors: [
  *   {
