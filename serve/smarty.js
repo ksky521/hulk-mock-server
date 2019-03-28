@@ -66,9 +66,9 @@ function serveSmarty(options = {}) {
 
     // 判断template dir是否存在
 
-    if (!pathExistsSync(baseDir)) {
-        throw `Smarty template directory does not exist! ${baseDir}`;
-    }
+    // if (!pathExistsSync(baseDir)) {
+    //     throw `Smarty template directory does not exist! ${baseDir}`;
+    // }
 
     const useMockData = pathExistsSync(dataDir);
     debug(useMockData, dataDir);
