@@ -87,8 +87,8 @@ function serveSmarty(options = {}) {
                     if (t && t.file) {
                         // dataFilePath = t.file;
                         // cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
-                        cmd.push(`--data=${t.file}`);
-                        infoCmd.push(`--data=${t.file}`);
+                        cmd.push(`--datafile=${t.file}`);
+                        infoCmd.push(`--datafile=${t.file}`);
                     }
                 }
 
