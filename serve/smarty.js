@@ -97,7 +97,8 @@ function serveSmarty(options = {}) {
                 let t = findData(filename, dataDir);
                 if (t && t.file) {
                     dataFilePath = t.file;
-                    cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
+                    // cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
+                    cmd.push(`--data=${t.file}`);
                     infoCmd.push(`--data=${t.file}`);
                 }
             }

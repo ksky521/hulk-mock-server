@@ -19,6 +19,7 @@ $smarty->setTemplateDir($templateDir)
     ->setCacheDir($cacheDir.'/./.cache');
 
 $tplData = trim($options['data']);
+$tplData = file_get_contents($tplData);
 $tplData = json_decode($tplData, true);
 if(!empty($tplData)){
     foreach($tplData as $key=>$val){
