@@ -3,19 +3,12 @@
  */
 const {exec, execSync} = require('child_process');
 const path = require('path');
-const {
-    resolve,
-    join
-} = path;
+const {resolve, join} = path;
 
 const Mock = require('mockjs');
 const which = require('which');
 const userHome = require('user-home');
-const {
-    readJsonSync,
-    pathExistsSync,
-    stat
-} = require('fs-extra');
+const {readJsonSync, pathExistsSync, stat} = require('fs-extra');
 
 const {name} = require('../package.json');
 const {debug} = require('../lib/utils');
@@ -40,10 +33,7 @@ function serveSmarty(options = {}) {
     const baseDir = resolve(options.baseDir || '');
 
     // 获取 php 路径
-    let {
-        bin,
-        dataDir = resolve(baseDir, './mock/_data_')
-    } = options;
+    let {bin, dataDir = resolve(baseDir, './mock/_data_')} = options;
 
     // 处理成标准目录
     dataDir = resolve(dataDir);
@@ -52,15 +42,13 @@ function serveSmarty(options = {}) {
         bin = which.sync('php', {
             nothrow: true
         });
-    }
-    else {
+    } else {
         bin = resolve(bin);
     }
 
     try {
         execSync(`${bin} -v`);
-    }
-    catch (e) {
+    } catch (e) {
         throw e;
     }
 
@@ -79,50 +67,50 @@ function serveSmarty(options = {}) {
         const orgiFilePath = resolve(baseDir, filename);
 
         // 先判断是不是目录
-        stat(orgiFilePath).then((stat) => {
-            if (stat.isDirectory()) {
-                return next();
-            }
-
-            // 提前将确定量加入 cmd
-            const cmd = [bin, PHP_FILE_PATH];
-
-            // 将 smarty cache 放到 userhome 下面
-            cmd.push(`--cache=${getQuoteString(join(userHome, `.${name}`))}`);
-            cmd.push(`--dir=${getQuoteString(baseDir)}`);
-            cmd.push(`--name=${getQuoteString(filename)}`);
-
-            const infoCmd = [...cmd];
-            if (useMockData) {
-                let t = findData(filename, dataDir);
-                if (t && t.file) {
-                    dataFilePath = t.file;
-                    // cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
-                    cmd.push(`--data=${t.file}`);
-                    infoCmd.push(`--data=${t.file}`);
+        stat(orgiFilePath)
+            .then(stat => {
+                if (stat.isDirectory()) {
+                    return next();
                 }
-            }
 
-            const code = cmd.join(' ');
-            debug(code);
+                // 提前将确定量加入 cmd
+                const cmd = [bin, PHP_FILE_PATH];
 
-            exec(code, (err, stdout, stderr) => {
-                if (err) {
-                    debug(err, stderr);
-                    stderr ? res.end(stderr) : stdout ? res.end(stdout) : res.end(err.toString());
+                // 将 smarty cache 放到 userhome 下面
+                cmd.push(`--cache=${getQuoteString(join(userHome, `.${name}`))}`);
+                cmd.push(`--dir=${getQuoteString(baseDir)}`);
+                cmd.push(`--name=${getQuoteString(filename)}`);
+
+                const infoCmd = [...cmd];
+                if (useMockData) {
+                    let t = findData(filename, dataDir);
+                    if (t && t.file) {
+                        // dataFilePath = t.file;
+                        // cmd.push(`--data=${getQuoteString(JSON.stringify(t.data))}`);
+                        cmd.push(`--data=${t.file}`);
+                        infoCmd.push(`--data=${t.file}`);
+                    }
                 }
-                else {
-                    const info = ['<!--created by smarty', ...infoCmd, '--->'].join('\n');
-                    const body = stdout + `${info}`;
-                    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                    // res.setHeader('Content-Length', body.length);
-                    res.end(body);
-                }
+
+                const code = cmd.join(' ');
+                debug(code);
+
+                exec(code, (err, stdout, stderr) => {
+                    if (err) {
+                        debug(err, stderr);
+                        stderr ? res.end(stderr) : stdout ? res.end(stdout) : res.end(err.toString());
+                    } else {
+                        const info = ['<!--created by smarty', ...infoCmd, '--->'].join('\n');
+                        const body = stdout + `${info}`;
+                        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                        // res.setHeader('Content-Length', body.length);
+                        res.end(body);
+                    }
+                });
+            })
+            .catch(() => {
+                next();
             });
-        }).catch(() => {
-            next();
-        });
-
     };
 }
 
@@ -140,7 +128,7 @@ function findData(filename, rootDir) {
         arr.push(resolve(rootDir, `./${name}.json`));
     }
 
-    const result = arr.find((file) => {
+    const result = arr.find(file => {
         debug(file);
 
         try {
@@ -148,8 +136,9 @@ function findData(filename, rootDir) {
             rs.file = file;
             rs.data = data;
             return true;
+        } catch (e) {
+            console.log(e);
         }
-        catch (e) {}
         return false;
     });
 
