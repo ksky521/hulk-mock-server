@@ -8,7 +8,7 @@ $smarty = new Smarty();
 $smarty->left_delimiter = "{%";
 $smarty->right_delimiter = "%}";
 
-$options = getopt('', array('dir:', 'name:', 'data:', 'cache:'));
+$options = getopt('', array('dir:', 'name:', 'datafile:', 'cache:'));
 
 
 $cacheDir = trim($options['cache']);

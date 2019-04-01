@@ -1,6 +1,6 @@
 {
     "name": "@baidu/hulk-mock-server",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "express mock server middleware",
     "main": "index.js",
     "scripts": {
