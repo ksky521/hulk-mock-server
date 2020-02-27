@@ -88,7 +88,8 @@ function run(processors = [], req, res, next) {
     else {
         const result = processors.find(({router, server}) => {
             const match = pathToRegexp(router).exec(req.path);
-            if (match && match[1]) {
+            debug(router, req.path, match);
+            if (match) {
                 debug('Find router ', router, match);
                 server(req, res, next, match[1]);
                 return true;

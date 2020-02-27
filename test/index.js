@@ -19,28 +19,44 @@ const configSmarty = mockServer({
     contentBase: path.join(__dirname, './'),
     rootDir: path.join(__dirname, './mock'),
     processors: [
-        `smarty?router=/template/*&baseDir=${path.join(__dirname, './template')}&dataDir=${path.join(__dirname, './mock/_data_')}`,
+        `smarty?router=/template/*&baseDir=${path.join(__dirname, './template')}&dataDir=${path.join(
+            __dirname,
+            './mock/_data_'
+        )}`,
         {
             router: '/_art_/*',
-            processor: (options) => {
+            processor: options => {
                 const rootDir = path.resolve(options.baseDir || '');
                 return (req, res, next, filename) => {
-
                     try {
                         debug(path.join(rootDir, filename));
                         const html = art(path.join(rootDir, filename), {
                             name: 'aui'
                         });
                         res.end(html);
-                    }
-                    catch (e) {
+                    } catch (e) {
                         next(e);
                     }
                 };
-
             },
             options: {
                 baseDir: path.join(__dirname, './art/')
+            }
+        },
+        {
+            router: '/newspage',
+            processor() {
+                return (req, res) => {
+                    res.end('/newspage');
+                };
+            }
+        },
+        {
+            router: '/news/*',
+            processor() {
+                return (req, res) => {
+                    res.end(req.path);
+                };
             }
         }
     ]
@@ -57,9 +73,7 @@ const request = supertest(app);
 
 describe('test jsondata.js', () => {
     it('index.json', done => {
-        request
-            .get('/_data_/demo/index.json')
-            .expect(200, require('./mock/_data_/demo/index.json'), done);
+        request.get('/_data_/demo/index.json').expect(200, require('./mock/_data_/demo/index.json'), done);
     });
     it('get mock.json', done => {
         request
@@ -72,14 +86,13 @@ describe('test jsondata.js', () => {
             .end(done);
     });
     it('serve index', done => {
-        request
-            .get('/_data_/demo/')
-            .expect(200, /title="(index|mock)\.json"/, done);
+        request.get('/_data_/demo/').expect(200, /title="(index|mock)\.json"/, done);
     });
 });
 describe('test mockapi.js', () => {
     it('api user', done => {
-        request.get('/api/user')
+        request
+            .get('/api/user')
             .expect(200)
             .expect(res => {
                 res.should.be.json();
@@ -118,9 +131,7 @@ describe('test mockapi.js', () => {
 });
 describe('test smarty.js', () => {
     it('file not found', done => {
-        request
-            .get('/template/demo/index.html')
-            .expect(200, 'hello', done);
+        request.get('/template/demo/index.html').expect(200, 'hello', done);
     });
     it('template parse', done => {
         request
@@ -128,7 +139,7 @@ describe('test smarty.js', () => {
             .buffer()
             .parse((res, next) => {
                 res.data = '';
-                res.on('data', (chunk) => {
+                res.on('data', chunk => {
                     res.data += chunk;
                 });
                 res.on('end', () => {
@@ -145,9 +156,7 @@ describe('test smarty.js', () => {
     });
     // 保证报错404，扔给 next 处理
     it('dir index', done => {
-        request
-            .get('/template/')
-            .expect(200, 'hello', done);
+        request.get('/template/').expect(200, 'hello', done);
     });
 });
 describe('art-template processor addon', () => {
@@ -159,6 +168,29 @@ describe('art-template processor addon', () => {
                 debug(res.text);
                 res.text.should.be.match(/aui/);
                 res.text.should.be.match(/糖饼/);
+            })
+            .end(done);
+    });
+});
+
+describe('测试目录类型', () => {
+    it('/news/*', done => {
+        request
+            .get('/news/index/index.html')
+            .expect(200)
+            .expect(res => {
+                debug(res.text);
+                res.text.should.be.equal('/news/index/index.html');
+            })
+            .end(done);
+    });
+    it('newspage', done => {
+        request
+            .get('/newspage')
+            .expect(200)
+            .expect(res => {
+                debug(res.text);
+                res.text.should.be.equal('/newspage');
             })
             .end(done);
     });
