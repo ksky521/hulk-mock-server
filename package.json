@@ -1,6 +1,6 @@
 {
     "name": "hulk-mock-server",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Express mock server middleware",
     "main": "index.js",
     "scripts": {
@@ -18,7 +18,7 @@
         "body-parser": "^1.18.3",
         "chokidar": "^2.0.4",
         "debug": "^4.1.0",
-        "fs-extra": "^9.0.0",
+        "fs-extra": "^8.1.0",
         "http-proxy": "^1.17.0",
         "import-global": "^0.1.0",
         "mockjs": "^1.0.1-beta3",
