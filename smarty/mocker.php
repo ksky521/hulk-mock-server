@@ -1,6 +1,8 @@
 <?php
 date_default_timezone_set('PRC');
-ini_set('error_reporting', E_ALL & ~E_NOTICE);
+// ini_set('error_reporting', E_ALL & ~E_NOTICE);
+ini_set('error_reporting', E_ERROR);
+
 ini_set('display_errors', 'On');
 require('thirdparty/Smarty.class.php');
 
