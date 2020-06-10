@@ -83,7 +83,7 @@ module.exports = (options = {}) => {
         return emptyServer;
     }
 
-    const {proxy: proxyConf = {}, changeHost = true} = proxy._proxy || conf;
+    const {proxy: proxyConf = {}, changeHost = true} = proxy._proxy || {};
     // 监听配置入口文件所在的目录，一般为认为在配置文件/mock 目录下的所有文件
     const watcher = chokidar.watch(path.dirname(watchFile));
     watcher.on('all', (event, path) => {
