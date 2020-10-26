@@ -55,7 +55,16 @@ function cleanCache(modulePath) {
         module.parent.children.splice(module.parent.children.indexOf(module), 1);
     }
 
-    require.cache[modulePath] = null;
+    require.cache[modulePath] = undefined;
+}
+
+// 兼容 babel 处理过的 ESModule
+function requireModule(path) {
+    let module = require(path);
+    if (module.default) {
+        module = module.default;
+    }
+    return module;
 }
 
 /**
@@ -73,11 +82,7 @@ module.exports = (options = {}) => {
     }
 
     // 注意： 这里用的是 require，所以配置文件不能用 ESModule 语法
-    let proxy = require(watchFile);
-    if (proxy.default) {
-        // 支持 babel 处理过的 ESModule 语法
-        proxy = proxy.default;
-    }
+    let proxy = requireModule(watchFile);
 
     if (!proxy) {
         return emptyServer;
@@ -95,7 +100,7 @@ module.exports = (options = {}) => {
                     cleanCache(watchFile);
                 }
 
-                proxy = require(watchFile);
+                proxy = requireModule(watchFile);
             }
             catch (ex) {
                 console.error(ex);
