@@ -55,7 +55,7 @@ function cleanCache(modulePath) {
         module.parent.children.splice(module.parent.children.indexOf(module), 1);
     }
 
-    require.cache[modulePath] = null;
+    require.cache[modulePath] = undefined;
 }
 
 /**
