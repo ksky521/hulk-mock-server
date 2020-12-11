@@ -39,9 +39,7 @@ function serveSmarty(options = {}) {
     dataDir = resolve(dataDir);
 
     if (!bin) {
-        bin = which.sync('php', {
-            nothrow: true
-        });
+        bin = which.sync('php');
     } else {
         bin = resolve(bin);
     }
