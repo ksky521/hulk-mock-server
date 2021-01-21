@@ -1,6 +1,6 @@
 {
     "name": "hulk-mock-server",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Express mock server middleware",
     "main": "index.js",
     "scripts": {
