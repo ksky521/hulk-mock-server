@@ -56,6 +56,7 @@ function cleanCache(modulePath) {
     }
 
     require.cache[modulePath] = undefined;
+    delete require.cache[modulePath];
 }
 
 // 兼容 babel 处理过的 ESModule
